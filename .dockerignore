@@ -1,0 +1,14 @@
+.git
+.gitignore
+build-local
+build
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.cursor
+.idea
+.vscode
+*.swp
+*~
+.DS_Store
