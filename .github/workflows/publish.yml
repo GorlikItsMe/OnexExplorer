@@ -68,6 +68,7 @@ jobs:
             mingw-w64-${{ matrix.mingw_arch }}-cmake
             mingw-w64-${{ matrix.mingw_arch }}-ninja
             mingw-w64-${{ matrix.mingw_arch }}-qt5
+            mingw-w64-${{ matrix.mingw_arch }}-qt5-tools
             mingw-w64-${{ matrix.mingw_arch }}-freeglut
 
       - name: Configure
@@ -82,7 +83,11 @@ jobs:
           mkdir -p release
           cp build/OnexExplorer.exe release/
           cd release
-          windeployqt --release --compiler-runtime OnexExplorer.exe
+          if [ -x "$MINGW_PREFIX/bin/windeployqt.exe" ]; then
+            "$MINGW_PREFIX/bin/windeployqt.exe" --release --compiler-runtime OnexExplorer.exe
+          else
+            "$MINGW_PREFIX/bin/windeployqt-qt5.exe" --release --compiler-runtime OnexExplorer.exe
+          fi
           cd ..
           shopt -s nullglob
           for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
