@@ -69,43 +69,8 @@ jobs:
             mingw-w64-x86_64-angleproject
             mingw-w64-x86_64-freeglut
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja
-
-      - name: Build
-        run: cmake --build build
-
-      - name: Prepare E2E portable folder
-        run: |
-          set -eux
-          mkdir -p e2e_exe
-          cp build/OnexExplorer.exe e2e_exe/
-          cd e2e_exe
-          if [ -x "$MINGW_PREFIX/bin/windeployqt.exe" ]; then
-            "$MINGW_PREFIX/bin/windeployqt.exe" --release --compiler-runtime OnexExplorer.exe
-          else
-            "$MINGW_PREFIX/bin/windeployqt-qt5.exe" --release --compiler-runtime OnexExplorer.exe
-          fi
-          cd ..
-          shopt -s nullglob
-          for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
-            cp "$dll" e2e_exe/
-          done
-
-      - name: Windows CLI diagnostics (raw exe, no Python)
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $root = $env:GITHUB_WORKSPACE
-          $exe = Join-Path $root "e2e_exe\OnexExplorer.exe"
-          $logDir = Join-Path $root "ci_windows_cli_debug"
-          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
-          Get-ChildItem (Join-Path $root "e2e_exe") | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Set-Content (Join-Path $logDir "e2e_exe_listing.txt")
-          $helpOut = Join-Path $logDir "help.stdout"
-          $helpErr = Join-Path $logDir "help.stderr"
-          $proc = Start-Process -FilePath $exe -ArgumentList "--help" -WorkingDirectory $root -NoNewWindow -Wait -PassThru `
-            -RedirectStandardOutput $helpOut -RedirectStandardError $helpErr
-          "ExitCode=$($proc.ExitCode)" | Set-Content (Join-Path $logDir "help_exitcode.txt")
+      - name: Build and portable release folder
+        run: bash packaging/windows/build.sh
 
       - name: Upload Windows CLI debug artifact
         if: always()
@@ -123,7 +88,7 @@ jobs:
       - name: Run E2E tests (CLI)
         shell: pwsh
         env:
-          ONEX_BIN: ${{ github.workspace }}/e2e_exe/OnexExplorer.exe
+          ONEX_BIN: ${{ github.workspace }}/release/OnexExplorer.exe
           PYTHONUNBUFFERED: "1"
         run: |
           $mingwBin = Join-Path "${{ steps.msys2.outputs['msys2-location'] }}" "mingw64\bin"

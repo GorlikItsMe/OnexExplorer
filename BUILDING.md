@@ -53,7 +53,7 @@ python -m venv .venv
 
 ## Windows (native, MSYS2 MINGW64)
 
-This matches the **Windows** job in [`.github/workflows/test.yml`](.github/workflows/test.yml). Build in the **MSYS2 MINGW64** environment (e.g. `mingw64.exe` or Start Menu **“MSYS2 MINGW64”**), not only the default **“MSYS2 MSYS”** shell from `msys2.exe`, so you use the same MinGW-w64 Qt and compiler layout as CI.
+CI and releases run **`packaging/windows/build.sh`** inside **MSYS2** (GitHub Actions uses the MSYS2 bash shell; MINGW64 in [`.github/workflows/test.yml`](.github/workflows/test.yml); MINGW64 or MINGW32 in [`.github/workflows/publish.yml`](.github/workflows/publish.yml)). Stock **Windows does not include bash**—it comes with MSYS2 (or Git Bash). Locally, use the **MSYS2 MINGW64** terminal (e.g. `mingw64.exe` or Start Menu **“MSYS2 MINGW64”**), not only **“MSYS2 MSYS”**, so `$MINGW_PREFIX`, Qt, and the compiler layout match CI.
 
 ### 1. Install MSYS2
 
@@ -80,40 +80,38 @@ pacman -S --needed \
   mingw-w64-x86_64-freeglut
 ```
 
-### 3. Configure and build
+### 3. One-shot: clean build + portable `release/` (recommended)
 
-From the repository root (under MSYS2, e.g. `cd /c/path/to/OnexExplorer`):
+**From PowerShell** (repo root; requires [MSYS2](https://www.msys2.org/) installed, default `C:\msys64`, or set **`MSYS2_ROOT`**):
+
+```powershell
+.\packaging\windows\build.ps1
+```
+
+For a **32-bit** MinGW toolchain, use `.\packaging\windows\build.ps1 -Msystem mingw32`.
+
+**From an MSYS2 MINGW64 shell** (e.g. `cd /c/path/to/OnexExplorer`):
+
+```bash
+bash packaging/windows/build.sh
+```
+
+This removes **`build/`** and **`release/`**, runs a fresh CMake **Ninja** build, then fills **`release/`** with `OnexExplorer.exe`, Qt runtime via `windeployqt`, and `libfreeglut*.dll`—the same layout as the Windows jobs in CI and the shipped zip. The real work is done by **`build.sh`** in MSYS2’s bash environment (`$MINGW_PREFIX`, `windeployqt`, MinGW `cmake`/`ninja`).
+
+Optional environment variables (see script header): `BUILD_DIR`, `RELEASE_DIR`.
+
+The Windows CMake target is linked as a **console** application so `--help` and `--cli` output appear in the terminal; starting the GUI with **no arguments** (e.g. double‑click) does not keep a stray console window open.
+
+### 4. Incremental configure and build (optional)
+
+If you do not want to wipe **`build/`** each time, configure and build only:
 
 ```bash
 cmake -S . -B build -G Ninja
 cmake --build build
 ```
 
-Output: `build/OnexExplorer.exe`.
-
-The Windows CMake target is linked as a **console** application so `--help` and `--cli` output appear in the terminal; starting the GUI with **no arguments** (e.g. double‑click) does not keep a stray console window open.
-
-### 4. Optional: portable folder (Qt + freeglut DLLs)
-
-To run outside MSYS without relying on the full MinGW `PATH`, copy the executable and run `windeployqt`, then add freeglut. This is the same sequence as in [`.github/workflows/test.yml`](.github/workflows/test.yml) (E2E folder) and [`.github/workflows/publish.yml`](.github/workflows/publish.yml) (release zip); only the output directory name differs below (`release` vs `e2e_exe` / `release` in CI).
-
-Run this block in **MSYS2 MINGW64** (Bash). It is **not** for cmd.exe or PowerShell—those shells do not understand `shopt`, `$MINGW_PREFIX`, or the `if`/`for` syntax below.
-
-```bash
-mkdir -p release
-cp build/OnexExplorer.exe release/
-cd release
-if [ -x "$MINGW_PREFIX/bin/windeployqt.exe" ]; then
-  "$MINGW_PREFIX/bin/windeployqt.exe" --release --compiler-runtime OnexExplorer.exe
-else
-  "$MINGW_PREFIX/bin/windeployqt-qt5.exe" --release --compiler-runtime OnexExplorer.exe
-fi
-cd ..
-shopt -s nullglob
-for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
-  cp "$dll" release/
-done
-```
+Output: `build/OnexExplorer.exe`. To get a runnable portable folder without the full MinGW `PATH`, run **`bash packaging/windows/build.sh`** (that script always cleans first), or reproduce its steps yourself using the same `windeployqt` and `libfreeglut*.dll` copy logic inside **`packaging/windows/build.sh`**.
 
 ### 5. If the default GCC (`cc`) fails to compile
 
@@ -131,11 +129,13 @@ cmake --build build
 
 You can invoke the same environment without opening the MINGW64 window manually, for example:
 
+Same idea as **`build.ps1`**: from cmd.exe you can call `msys2_shell.cmd` directly (adjust paths):
+
 ```text
-C:\msys64\msys2_shell.cmd -mingw64 -defterm -no-start -where C:\path\to\OnexExplorer -lc "cmake -S . -B build -G Ninja && cmake --build build"
+C:\msys64\msys2_shell.cmd -mingw64 -defterm -no-start -where C:\path\to\OnexExplorer -lc "bash packaging/windows/build.sh"
 ```
 
-(Replace `C:\msys64` and the repo path as needed.)
+(For an incremental build without cleaning, use `cmake -S . -B build -G Ninja && cmake --build build` inside the same MSYS2 environment instead of the script.)
 
 ## Windows (from Linux via cross-compile)
 

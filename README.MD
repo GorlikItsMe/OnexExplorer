@@ -88,7 +88,7 @@ These tests build the app, download selected `.NOS` files, then run **CLI unpack
 
 1. **Compile OnexExplorer** (see [BUILDING.md](/BUILDING.md)) so the binary exists, by default:
    - Linux: `build/OnexExplorer`
-   - Windows (MSYS/MinGW): `build/OnexExplorer.exe`
+   - Windows (MSYS/MinGW): run **`.\packaging\windows\build.ps1`** from PowerShell, or **`bash packaging/windows/build.sh`** from an MSYS2 MINGW64 shell, so tests use **`release/OnexExplorer.exe`** (the raw `build/` exe is not enough for Qt/DLLs; Windows does not ship bash—MSYS2 provides it)
 2. **Python 3** with packages:
 
 ```bash
@@ -105,7 +105,7 @@ export QT_QPA_PLATFORM=offscreen   # headless Qt; optional on desktop with a dis
 python3 -m pytest tests/ -v
 ```
 
-On **Windows**, use a **portable** folder after `windeployqt` (see [BUILDING.md](BUILDING.md)); do **not** set `QT_QPA_PLATFORM=offscreen` unless you also deploy `platforms\qoffscreen.dll`. Tests clear that variable on Windows so Qt uses the usual `qwindows` plugin from `release/` or `e2e_exe/`.
+On **Windows**, use **`release/`** after **`.\packaging\windows\build.ps1`** or the MSYS2 **`build.sh`** flow (see [BUILDING.md](BUILDING.md)); do **not** set `QT_QPA_PLATFORM=offscreen` unless you also deploy `platforms\qoffscreen.dll`. Tests clear that variable on Windows so Qt uses the usual `qwindows` plugin next to the exe.
 
 ```powershell
 $env:ONEX_BIN="release\OnexExplorer.exe"   # or omit if release\ exists (default search order)
@@ -116,7 +116,7 @@ python -m pytest tests/ -v
 
 | Variable | Meaning |
 |----------|---------|
-| `ONEX_BIN` | Full path to the `OnexExplorer` executable (default: `build/OnexExplorer` or `build/OnexExplorer.exe` under the repo) |
+| `ONEX_BIN` | Full path to the `OnexExplorer` executable (default: `build/OnexExplorer` on Linux; on Windows, `release/OnexExplorer.exe` if present, else `build/OnexExplorer.exe`) |
 | `ONEX_BUILD_DIR` | Directory containing the built binary (default: `build` under the repo) |
 | `ONEX_DOWNLOAD_DIR` | Cache for downloaded `.NOS` files (default: `.cache/nostale_files`) |
 

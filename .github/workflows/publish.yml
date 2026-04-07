@@ -72,28 +72,8 @@ jobs:
             mingw-w64-${{ matrix.mingw_arch }}-angleproject
             mingw-w64-${{ matrix.mingw_arch }}-freeglut
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja
-
-      - name: Build
-        run: cmake --build build
-
-      - name: Prepare portable folder
-        run: |
-          set -eux
-          mkdir -p release
-          cp build/OnexExplorer.exe release/
-          cd release
-          if [ -x "$MINGW_PREFIX/bin/windeployqt.exe" ]; then
-            "$MINGW_PREFIX/bin/windeployqt.exe" --release --compiler-runtime OnexExplorer.exe
-          else
-            "$MINGW_PREFIX/bin/windeployqt-qt5.exe" --release --compiler-runtime OnexExplorer.exe
-          fi
-          cd ..
-          shopt -s nullglob
-          for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
-            cp "$dll" release/
-          done
+      - name: Build and portable release folder
+        run: bash packaging/windows/build.sh
 
       - name: Zip release (PowerShell)
         shell: pwsh

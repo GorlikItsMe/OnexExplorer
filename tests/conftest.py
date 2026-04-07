@@ -24,16 +24,14 @@ def _default_onex_bin() -> Path:
     """Resolve the CLI/GUI binary to run under tests.
 
     On Windows, ``build/OnexExplorer.exe`` is not runnable by itself (Qt plugins + DLLs);
-    the portable layout from BUILDING.md (``release/``) or CI (``e2e_exe/``) must be used.
-    Those are preferred before ``build/``.
+    the portable layout in ``release/`` (from ``packaging/windows/build.sh``) is preferred before ``build/``.
     On Unix, CMake emits ``OnexExplorer`` in ``BUILD_DIR`` (with optional ``.exe``).
     """
     no_ext = BUILD_DIR / "OnexExplorer"
     exe = BUILD_DIR / "OnexExplorer.exe"
     if sys.platform == "win32":
         portable = REPO_ROOT / "release" / "OnexExplorer.exe"
-        e2e = REPO_ROOT / "e2e_exe" / "OnexExplorer.exe"
-        for candidate in (portable, e2e, exe, no_ext):
+        for candidate in (portable, exe, no_ext):
             if candidate.is_file():
                 return candidate
         return exe
@@ -84,8 +82,7 @@ def pytest_configure(config: pytest.Config) -> None:
         pytest.exit(
             "On Windows, pytest needs a windeployqt'd OnexExplorer (Qt + freeglut DLLs next to the exe). "
             "The file in build/ alone does not run from PowerShell/cmd. "
-            "Create release/ as in BUILDING.md section 4 (portable folder), or set ONEX_BIN to that exe "
-            "(CI uses e2e_exe/OnexExplorer.exe).",
+            "Run `.\\packaging\\windows\\build.ps1` (PowerShell) or `bash packaging/windows/build.sh` in MSYS2 (see BUILDING.md), or set ONEX_BIN to release/OnexExplorer.exe.",
             returncode=1,
         )
 
