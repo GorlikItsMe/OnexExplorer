@@ -1,6 +1,7 @@
 import argparse
 import json
 import hashlib
+import time
 from pathlib import Path
 from typing import Dict, Optional, Union
 
@@ -32,10 +33,28 @@ class GfPatcher:
         self._manifest: Optional[Dict] = None
         self._entries_by_file: Optional[Dict[str, Dict]] = None
 
+    _TRANSIENT_GET_EXCEPTIONS = (
+        requests.exceptions.ChunkedEncodingError,
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+    )
+
+    def _get_bytes(self, url: str, *, timeout: int) -> bytes:
+        """GET whole body with retries (CI/CD and CDNs sometimes drop large transfers)."""
+        for attempt in range(5):
+            try:
+                r = self._session.get(url, timeout=timeout)
+                r.raise_for_status()
+                return r.content
+            except self._TRANSIENT_GET_EXCEPTIONS:
+                if attempt == 4:
+                    raise
+                time.sleep(min(30, 2**attempt))
+        raise RuntimeError("_get_bytes retry loop fell through")
+
     def _load_manifest(self) -> None:
-        r = self._session.get(self._api_url, timeout=60)
-        r.raise_for_status()
-        self._manifest = r.json()
+        raw = self._get_bytes(self._api_url, timeout=120)
+        self._manifest = json.loads(raw.decode())
         self._entries_by_file = {}
         for entry in self._manifest.get("entries", []):
             self._entries_by_file[entry["file"]] = entry
@@ -87,9 +106,7 @@ class GfPatcher:
 
         # Download file
         url = self._patch_base_url + entry["path"]
-        response = self._session.get(url, timeout=120)
-        response.raise_for_status()
-        data = response.content
+        data = self._get_bytes(url, timeout=300)
 
         if target_path is not None:
             save_path = Path(target_path).expanduser()

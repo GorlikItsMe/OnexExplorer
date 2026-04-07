@@ -48,6 +48,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Python
+        id: python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -103,6 +104,7 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: |
           $mingwBin = Join-Path "${{ steps.msys2.outputs['msys2-location'] }}" "mingw64\bin"
-          $env:PATH = "$mingwBin;$env:PATH"
-          python -m pytest -q
+          # Append (do not prepend): MinGW's python is also in mingw64/bin and would shadow setup-python.
+          $env:PATH = "$env:PATH;$mingwBin"
+          & "${{ steps.python.outputs['python-path'] }}" -m pytest -q
 
