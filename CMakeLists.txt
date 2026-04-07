@@ -15,10 +15,9 @@ find_package(Qt5Core REQUIRED)
 find_package(Qt5Widgets REQUIRED)
 find_package(Qt5Gui REQUIRED)
 
-set(GLUT_LIBRARY_DIR "freeglut/lib")
-set(GLUT_INCLUDE_DIR "freeglut/include/GL")
+find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
-include_directories(${GLUT_INCLUDE_DIR})
+include_directories(${GLUT_INCLUDE_DIRS})
 
 set(SOURCES
         Source/main.cpp
@@ -100,7 +99,7 @@ set(UIS
         Source/Ui/Previews/SingleTextFilePreview.ui
         Source/Ui/Previews/SingleImagePreview.ui
         Source/Ui/Previews/MultiImagePreview.ui
-        Source/Ui/Settings.ui
+        Source/Ui/settings.ui
         )
 
 set(RESOURCES
@@ -110,11 +109,15 @@ set(RESOURCES
 
 # compile
 #add_executable( PROJECT_NAME ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} )
-# or use line below instead, if you using Windows ™ Operating System.
-add_executable(OnexExplorer WIN32 ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
+if (WIN32)
+    add_executable(OnexExplorer WIN32 ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
+else()
+    add_executable(OnexExplorer ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
+endif()
 
 # build it (link libraries)
 target_link_libraries(OnexExplorer Qt5::Core)
 target_link_libraries(OnexExplorer Qt5::Widgets)
 target_link_libraries(OnexExplorer Qt5::Gui)
 target_link_libraries(OnexExplorer ${GLUT_LIBRARIES})
+target_link_libraries(OnexExplorer ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY})
