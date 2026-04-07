@@ -70,6 +70,19 @@ jobs:
       - name: Build
         run: cmake --build build
 
+      - name: Prepare E2E portable folder
+        run: |
+          set -eux
+          mkdir -p e2e_exe
+          cp build/OnexExplorer.exe e2e_exe/
+          cd e2e_exe
+          windeployqt --release --compiler-runtime OnexExplorer.exe
+          cd ..
+          shopt -s nullglob
+          for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
+            cp "$dll" e2e_exe/
+          done
+
       - name: Install test dependencies
         shell: pwsh
         run: |
@@ -79,7 +92,7 @@ jobs:
       - name: Run E2E tests (CLI)
         shell: pwsh
         env:
-          ONEX_BIN: build/OnexExplorer.exe
+          ONEX_BIN: e2e_exe/OnexExplorer.exe
           QT_QPA_PLATFORM: offscreen
         run: |
           python -m pytest -q
