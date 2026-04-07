@@ -17,13 +17,25 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ \
             qtbase5-dev qttools5-dev-tools \
-            freeglut3-dev libglu1-mesa-dev mesa-common-dev
+            freeglut3-dev libglu1-mesa-dev mesa-common-dev \
+            python3 python3-pip
 
       - name: Configure
         run: cmake -S . -B build -G Ninja
 
       - name: Build
         run: cmake --build build
+
+      - name: Install test dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install requests pillow pytest
+
+      - name: Run E2E tests (CLI)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python3 -m pytest -q
 
   windows:
     name: Windows build (MSYS2 MinGW64)
@@ -34,6 +46,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
@@ -52,4 +69,18 @@ jobs:
 
       - name: Build
         run: cmake --build build
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests pillow pytest
+
+      - name: Run E2E tests (CLI)
+        shell: pwsh
+        env:
+          ONEX_BIN: build/OnexExplorer.exe
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -m pytest -q
 

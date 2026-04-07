@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "Openers/NosOpenerSelector.h"
 #include "ui_mainwindow.h"
 #include "Ui/TreeItems/OnexNSmpData.h"
 #include <QScrollArea>
@@ -402,11 +403,15 @@ void MainWindow::handleOpenResults(OnexTreeItem *item, const QString &path) {
 }
 
 INosFileOpener *MainWindow::getOpener(const QByteArray &header) {
-    if (header.mid(0, 7) == "NT Data" || header.mid(0, 10) == "32GBS V1.0" || header.mid(0, 10) == "ITEMS V1.0")
-        return &zlibOpener;
-    else if (header.mid(0, 11) == "CCINF V1.20")
-        return &ccinfOpener;
-    return &textOpener;
+    switch (selectNosOpenerKind(header)) {
+        case NosOpenerKind::Zlib:
+            return &zlibOpener;
+        case NosOpenerKind::CCInf:
+            return &ccinfOpener;
+        case NosOpenerKind::Text:
+        default:
+            return &textOpener;
+    }
 }
 
 template<typename TreeFunction>

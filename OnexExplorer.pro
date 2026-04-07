@@ -23,6 +23,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     Source/main.cpp \
+    Source/cli.cpp \
     Source/MainWindow.cpp \
     Source/Converters/ImageConverter.cpp \
     Source/Converters/LittleEndianConverter.cpp \
@@ -34,6 +35,7 @@ SOURCES += \
     Source/Openers/NosZlibOpener.cpp \
     Source/Openers/NosCCInfOpener.cpp \
     Source/Openers/NosTextOpener.cpp \
+    Source/Openers/NosOpenerSelector.cpp \
     Source/Openers/INosFileOpener.cpp \
     Source/Openers/JsonConfigOpener.cpp \
     Source/Ui/OnexTreeItem.cpp \
@@ -61,6 +63,7 @@ SOURCES += \
 
 HEADERS  += \
     Source/MainWindow.h \
+    Source/cli.h \
     Source/NosEnumTypes.h \
     Source/Converters/ImageConverter.h \
     Source/Converters/LittleEndianConverter.h \
@@ -73,6 +76,7 @@ HEADERS  += \
     Source/Openers/NosZlibOpener.h \
     Source/Openers/NosCCInfOpener.h \
     Source/Openers/NosTextOpener.h \
+    Source/Openers/NosOpenerSelector.h \
     Source/Openers/INosFileOpener.h \
     Source/Openers/JsonConfigOpener.h \
     Source/Ui/OnexTreeItem.h \
