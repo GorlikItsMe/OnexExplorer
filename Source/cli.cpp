@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -67,11 +68,14 @@ static int runCliUnpack(const QString &unpackFile, const QString &targetDir) {
     OnexTreeItem *root = opener->decrypt(file);
     file.close();
 
-    if (root == nullptr)
+    if (root == nullptr) {
+        qDebug() << "CLI unpack failed: decrypt returned null";
         return Cli::UnpackFailed;
+    }
 
+    qDebug() << "CLI unpack decrypt ok, exporting to:" << normalizedTarget;
     const int written = root->onExport(normalizedTarget);
-    (void) written;
+    qDebug() << "CLI unpack done, onExport returned:" << written;
     return Cli::Ok;
 }
 } // namespace

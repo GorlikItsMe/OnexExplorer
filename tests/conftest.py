@@ -44,21 +44,37 @@ def _resolved_onex_bin() -> Path:
 
 ONEX_BIN = _resolved_onex_bin()
 
+# Default for OnexExplorer CLI subprocess (--cli --unpack, etc.)
+_ONEX_SUBPROCESS_TIMEOUT_SEC = 30.0
+
+
+def _stdio_for_onex() -> Tuple[Optional[int], Optional[int]]:
+    """
+    WIN32 GUI exes often deadlock or stall subprocess PIPE readers; use DEVNULL on Windows.
+    On Unix, capture combined stdout+stderr for assertion messages.
+    """
+    if sys.platform == "win32":
+        return subprocess.DEVNULL, subprocess.DEVNULL
+    return subprocess.PIPE, subprocess.STDOUT
+
 
 def _run_cmd(
     cmd: List[str],
     *,
     cwd=REPO_ROOT,
     env=None,
-    timeout=60.0,
+    timeout: Optional[float] = None,
 ) -> Tuple[int, str]:
+    if timeout is None:
+        timeout = _ONEX_SUBPROCESS_TIMEOUT_SEC
+    stdout_arg, stderr_arg = _stdio_for_onex()
     try:
         p = subprocess.run(
             cmd,
             cwd=cwd,
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stdout=stdout_arg,
+            stderr=stderr_arg,
             text=True,
             timeout=timeout,
         )
@@ -68,8 +84,9 @@ def _run_cmd(
             f"\n[OnexExplorer subprocess still running after {timeout}s — likely hang or pathological "
             f"slow unpack; child was terminated by pytest harness]\n{partial}"
         )
-        assert False, msg
-    return p.returncode, p.stdout or ""
+        raise AssertionError(msg) from e
+    captured = (p.stdout or "") if stdout_arg is subprocess.PIPE else ""
+    return p.returncode, captured
 
 
 def _cli_unpack(game_file_path: Path, target_dir: Path) -> None:
@@ -80,7 +97,7 @@ def _cli_unpack(game_file_path: Path, target_dir: Path) -> None:
         [str(ONEX_BIN), "--cli", "--unpack", str(game_file_path), "--target", str(target_dir)],
         env=env,
     )
-    assert rc == 0, out
+    assert rc == 0, out or "(no captured output on Windows; use raw exe debug artifact / run with console build)"
 
 
 @pytest.fixture(scope="session")

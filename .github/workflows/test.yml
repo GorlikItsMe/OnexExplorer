@@ -36,7 +36,7 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           PYTHONUNBUFFERED: "1"
         run: |
-          python3 -u -m pytest -v -s --tb=short
+          python3 -u -m pytest -vv -s --tb=long
 
   windows:
     name: Windows build (MSYS2 MinGW64)
@@ -92,6 +92,30 @@ jobs:
             cp "$dll" e2e_exe/
           done
 
+      - name: Windows CLI diagnostics (raw exe, no Python)
+        shell: pwsh
+        continue-on-error: true
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          $root = $env:GITHUB_WORKSPACE
+          $exe = Join-Path $root "e2e_exe\OnexExplorer.exe"
+          $logDir = Join-Path $root "ci_windows_cli_debug"
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+          Get-ChildItem (Join-Path $root "e2e_exe") | Select-Object Name, Length | Format-Table -AutoSize | Out-String | Set-Content (Join-Path $logDir "e2e_exe_listing.txt")
+          $helpOut = Join-Path $logDir "help.stdout"
+          $helpErr = Join-Path $logDir "help.stderr"
+          $proc = Start-Process -FilePath $exe -ArgumentList "--help" -WorkingDirectory $root -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput $helpOut -RedirectStandardError $helpErr
+          "ExitCode=$($proc.ExitCode)" | Set-Content (Join-Path $logDir "help_exitcode.txt")
+
+      - name: Upload Windows CLI debug artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-cli-debug
+          path: ci_windows_cli_debug/
+
       - name: Install test dependencies
         shell: pwsh
         run: |
@@ -108,5 +132,5 @@ jobs:
           $mingwBin = Join-Path "${{ steps.msys2.outputs['msys2-location'] }}" "mingw64\bin"
           # Append (do not prepend): MinGW's python is also in mingw64/bin and would shadow setup-python.
           $env:PATH = "$env:PATH;$mingwBin"
-          & "${{ steps.python.outputs['python-path'] }}" -u -m pytest -v -s --tb=short
+          & "${{ steps.python.outputs['python-path'] }}" -u -m pytest -vv -s --tb=long
 
