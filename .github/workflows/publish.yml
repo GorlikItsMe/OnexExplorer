@@ -7,8 +7,10 @@ on:
 
 jobs:
   linux:
-    name: Linux (Ubuntu) build
+    name: Linux (Ubuntu) AppImage
     runs-on: ubuntu-latest
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -19,7 +21,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build g++ \
             qtbase5-dev qttools5-dev-tools \
-            freeglut3-dev libglu1-mesa-dev mesa-common-dev
+            freeglut3-dev libglu1-mesa-dev mesa-common-dev \
+            patchelf imagemagick binutils file wget
 
       - name: Configure
         run: cmake -S . -B build -G Ninja
@@ -27,15 +30,27 @@ jobs:
       - name: Build
         run: cmake --build build
 
+      - name: Build AppImage
+        run: packaging/linux/build-appimage.sh
+
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
           name: OnexExplorer-linux-x86_64
-          path: build/OnexExplorer
+          path: OnexExplorer-*-x86_64.AppImage
 
   windows:
-    name: Windows build (MSYS2 MinGW64)
+    name: Windows (${{ matrix.msystem }})
     runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - msystem: MINGW64
+            mingw_arch: x86_64
+            artifact_suffix: x86_64
+          - msystem: MINGW32
+            mingw_arch: i686
+            artifact_suffix: i686
     defaults:
       run:
         shell: msys2 {0}
@@ -46,26 +61,32 @@ jobs:
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ matrix.msystem }}
           update: true
           install: >-
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-qt5
-            mingw-w64-x86_64-freeglut
+            mingw-w64-${{ matrix.mingw_arch }}-toolchain
+            mingw-w64-${{ matrix.mingw_arch }}-cmake
+            mingw-w64-${{ matrix.mingw_arch }}-ninja
+            mingw-w64-${{ matrix.mingw_arch }}-qt5
+            mingw-w64-${{ matrix.mingw_arch }}-qt5-tools
+            mingw-w64-${{ matrix.mingw_arch }}-angleproject
+            mingw-w64-${{ matrix.mingw_arch }}-freeglut
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja
+      - name: Build and portable release folder
+        run: bash packaging/windows/build.sh
 
-      - name: Build
-        run: cmake --build build
+      - name: Zip release (PowerShell)
+        shell: pwsh
+        run: |
+          $zip = "OnexExplorer-windows-${{ matrix.artifact_suffix }}.zip"
+          if (Test-Path $zip) { Remove-Item $zip }
+          Compress-Archive -Path release/* -DestinationPath $zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: OnexExplorer-windows-x86_64
-          path: build/OnexExplorer.exe
+          name: OnexExplorer-windows-${{ matrix.artifact_suffix }}
+          path: OnexExplorer-windows-${{ matrix.artifact_suffix }}.zip
 
   release:
     name: GitHub Release
@@ -81,6 +102,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/OnexExplorer-linux-x86_64/OnexExplorer
-            dist/OnexExplorer-windows-x86_64/OnexExplorer.exe
-
+            dist/OnexExplorer-linux-x86_64/*.AppImage
+            dist/OnexExplorer-windows-x86_64/*.zip
+            dist/OnexExplorer-windows-i686/*.zip

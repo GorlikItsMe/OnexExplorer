@@ -1,0 +1,127 @@
+#include "cli.h"
+
+#include "Openers/NosCCInfOpener.h"
+#include "Openers/NosOpenerSelector.h"
+#include "Openers/NosTextOpener.h"
+#include "Openers/NosZlibOpener.h"
+
+#include <QApplication>
+#include <QCommandLineParser>
+#include <QCoreApplication>
+#include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QStringList>
+
+#include <cstdio>
+
+namespace {
+static INosFileOpener *selectOpener(const QByteArray &header, NosTextOpener &textOpener, NosZlibOpener &zlibOpener,
+                                    NosCCInfOpener &ccinfOpener) {
+    switch (selectNosOpenerKind(header)) {
+        case NosOpenerKind::Zlib:
+            return &zlibOpener;
+        case NosOpenerKind::CCInf:
+            return &ccinfOpener;
+        case NosOpenerKind::Text:
+        default:
+            return &textOpener;
+    }
+}
+
+static int runCliUnpack(const QString &unpackFile, const QString &targetDir) {
+    if (unpackFile.isEmpty() || targetDir.isEmpty())
+        return Cli::BadArgs;
+
+    QFileInfo inInfo(unpackFile);
+    if (!inInfo.exists() || !inInfo.isFile())
+        return Cli::CannotOpenInput;
+
+    QDir outDir(targetDir);
+    if (!outDir.exists()) {
+        if (!QDir().mkpath(targetDir))
+            return Cli::CannotWriteTarget;
+    }
+
+    QString normalizedTarget = QDir::cleanPath(targetDir);
+    if (!normalizedTarget.endsWith('/'))
+        normalizedTarget += '/';
+
+    QFile file(unpackFile);
+    if (!file.open(QIODevice::ReadOnly))
+        return Cli::CannotOpenInput;
+
+    QByteArray header = file.read(0x0B);
+    file.seek(0);
+
+    NosTextOpener textOpener;
+    NosZlibOpener zlibOpener;
+    NosCCInfOpener ccinfOpener;
+
+    INosFileOpener *opener = selectOpener(header, textOpener, zlibOpener, ccinfOpener);
+    OnexTreeItem *root = opener->decrypt(file);
+    file.close();
+
+    if (root == nullptr) {
+        qDebug() << "CLI unpack failed: decrypt returned null";
+        return Cli::UnpackFailed;
+    }
+
+    qDebug() << "CLI unpack decrypt ok, exporting to:" << normalizedTarget;
+    const int written = root->onExport(normalizedTarget);
+    qDebug() << "CLI unpack done, onExport returned:" << written;
+    return Cli::Ok;
+}
+} // namespace
+
+namespace Cli {
+int run(QApplication &app, const QStringList &arguments) {
+    QCommandLineParser parser;
+    parser.setApplicationDescription("OnexExplorer (GUI + CLI). Use --cli to run headless commands.");
+    // Do not use addHelpOption()/addVersionOption(): with QApplication on Windows they show QMessageBox
+    // instead of printing to the terminal.
+    QCommandLineOption helpOpt(QStringList() << "h" << "help", "Displays help on the command line.");
+    QCommandLineOption versionOpt(QStringList() << "v" << "version", "Displays version information.");
+    parser.addOption(helpOpt);
+    parser.addOption(versionOpt);
+
+    QCommandLineOption cliOpt(QStringList() << "cli", "Run in CLI mode (no GUI).");
+    QCommandLineOption unpackOpt(QStringList() << "unpack", "Unpack a .NOS file.", "filepath");
+    QCommandLineOption targetOpt(QStringList() << "target", "Target folder for --unpack output.", "folder");
+
+    parser.addOption(cliOpt);
+    parser.addOption(unpackOpt);
+    parser.addOption(targetOpt);
+
+    if (!parser.parse(arguments)) {
+        fprintf(stderr, "%s\n\n%s\n", qPrintable(parser.errorText()), qPrintable(parser.helpText()));
+        fflush(stderr);
+        return BadArgs;
+    }
+    if (parser.isSet(helpOpt)) {
+        fprintf(stderr, "%s\n", qPrintable(parser.helpText()));
+        fflush(stderr);
+        return 0;
+    }
+    if (parser.isSet(versionOpt)) {
+        fprintf(stderr, "%s %s\n", qPrintable(QCoreApplication::applicationName()),
+                qPrintable(QCoreApplication::applicationVersion()));
+        fflush(stderr);
+        return 0;
+    }
+
+    if (!parser.isSet(cliOpt))
+        return -1; // not CLI mode
+
+    if (!parser.isSet(unpackOpt) || !parser.isSet(targetOpt)) {
+        fprintf(stderr, "%s\n\n%s\n", qPrintable(QStringLiteral("With --cli, both --unpack and --target are required.")),
+                qPrintable(parser.helpText()));
+        fflush(stderr);
+        return BadArgs;
+    }
+
+    return runCliUnpack(parser.value(unpackOpt), parser.value(targetOpt));
+}
+} // namespace Cli
+
