@@ -101,7 +101,7 @@ FORMS    += \
     Source/Ui/Previews/SingleTextFilePreview.ui \
     Source/Ui/Previews/SingleImagePreview.ui \
     Source/Ui/Previews/MultiImagePreview.ui \
-    Source/Ui/Settings.ui
+    Source/Ui/settings.ui
 
 DISTFILES +=
 

@@ -6,7 +6,13 @@
 #include <QOpenGLWidget>
 #include <QVector3D>
 #include <QWheelEvent>
-#include <glut.h>
+#if defined(__APPLE__)
+#include <GLUT/glut.h>
+#elif defined(_WIN32)
+#include <GL/freeglut.h>
+#else
+#include <GL/glut.h>
+#endif
 
 struct Mouse {
     int X;

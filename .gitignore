@@ -37,6 +37,11 @@ Makefile*
 # QtCtreator CMake
 CMakeLists.txt.user*
 
+# Python / local tooling
+.venv/
+__pycache__/
+*.pyc
+
 # Windows trash
 *.db
 
@@ -55,3 +60,15 @@ OnexExplorer
 freeglut/*
 
 *.xmi
+
+# Local logs
+aqtinstall.log
+
+# Common local build artifacts
+/build/
+/build-*/
+/build-mingw/
+/dist/
+
+# Local downloaded SDKs/toolchains (large)
+/third_party/
