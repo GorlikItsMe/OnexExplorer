@@ -2,6 +2,17 @@
 
 This project is a Qt5 Widgets application with OpenGL/GLU + GLUT (freeglut).
 
+## Linux — install without compiling (recommended for most users)
+
+From **Releases**, download **`OnexExplorer-*-x86_64.AppImage`**, then:
+
+```bash
+chmod +x OnexExplorer-*-x86_64.AppImage
+./OnexExplorer-*-x86_64.AppImage
+```
+
+To build the AppImage yourself (e.g. CI parity), use **`packaging/linux/build-appimage.sh`** after a normal CMake build (see script header for environment variables).
+
 ## Linux (Arch)
 
 ### Dependencies (system packages)

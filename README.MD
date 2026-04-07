@@ -51,11 +51,30 @@ Our project is based on **Boost Software License**:
 
 ## Installation ##
 
-**Download** a **[release](https://github.com/Pumbaa98/OnexExplorer/releases)** or:
+Downloads: **Releases** (tagged versions). Pre-releases are experimental.
 
-1. Compile given sourcecode using Qt 5.5+ and OpenGl (freeglut)
-2. Move required Qt DLL's to EXE's location
-3. Run the program
+### Linux (x86_64)
+
+Official Linux builds are shipped as an **AppImage** (bundled Qt and freeglut; you do **not** need to install those from your distro).
+
+1. Download `OnexExplorer-*-x86_64.AppImage` from the release assets.
+2. Make it executable and run it:
+
+```bash
+chmod +x OnexExplorer-*-x86_64.AppImage
+./OnexExplorer-*-x86_64.AppImage
+```
+
+**Notes**
+
+- You still need a normal **desktop/OpenGL stack** (Mesa or vendor drivers are usually already there). This is standard on almost all Linux desktops.
+- To build from source instead (Arch, Ubuntu, etc.), see **[BUILDING.md](/BUILDING.md)**.
+
+### Windows
+
+1. Download the **`OnexExplorer-windows-*.zip`** for your architecture (x86_64 or i686) from the release.
+2. Extract the whole folder; keep `OnexExplorer.exe` together with the bundled `.dll` files, `platforms`, `styles`, and any other shipped files.
+3. Run `OnexExplorer.exe`.
 
 The experimental branch and releases flaged with **pre-release** are in development and don't guarantee that everything works as expected. 
 **If you have any problems please try to compile the master branch or use regular releases!**

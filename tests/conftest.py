@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Callable, List
@@ -17,7 +18,24 @@ UnpackGameArchive = Callable[[str], Path]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BUILD_DIR = Path(os.environ.get("ONEX_BUILD_DIR", REPO_ROOT / "build"))
-ONEX_BIN = Path(os.environ.get("ONEX_BIN", BUILD_DIR / "OnexExplorer"))
+
+
+def _default_onex_bin() -> Path:
+    """CMake emits OnexExplorer.exe on Windows and OnexExplorer on Unix-like systems."""
+    no_ext = BUILD_DIR / "OnexExplorer"
+    exe = BUILD_DIR / "OnexExplorer.exe"
+    if sys.platform == "win32":
+        for candidate in (exe, no_ext):
+            if candidate.is_file():
+                return candidate
+        return exe
+    for candidate in (no_ext, exe):
+        if candidate.is_file():
+            return candidate
+    return no_ext
+
+
+ONEX_BIN = Path(os.environ["ONEX_BIN"]) if os.environ.get("ONEX_BIN") else _default_onex_bin()
 
 
 def _run_cmd(cmd: List[str], *, cwd=REPO_ROOT, env=None) -> tuple:
