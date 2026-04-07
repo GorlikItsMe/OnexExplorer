@@ -1,4 +1,4 @@
-# Building OnexExplorer (Linux + Windows cross-build)
+# Building OnexExplorer (Linux, native Windows, and Windows cross-build)
 
 This project is a Qt5 Widgets application with OpenGL/GLU + GLUT (freeglut).
 
@@ -50,6 +50,85 @@ python -m venv .venv
 ./.venv/bin/cmake -S . -B build -G Ninja
 ./.venv/bin/cmake --build build
 ```
+
+## Windows (native, MSYS2 MINGW64)
+
+This matches the **Windows** job in [`.github/workflows/test.yml`](.github/workflows/test.yml). Build in the **MSYS2 MINGW64** environment (e.g. `mingw64.exe` or Start Menu **“MSYS2 MINGW64”**), not only the default **“MSYS2 MSYS”** shell from `msys2.exe`, so you use the same MinGW-w64 Qt and compiler layout as CI.
+
+### 1. Install MSYS2
+
+Install [MSYS2](https://www.msys2.org/), then update the package databases (from any MSYS2 shell):
+
+```bash
+pacman -Syu
+```
+
+Close the terminal if the updater asks you to, then run `pacman -Syu` again until there is nothing left to do.
+
+### 2. Install build dependencies
+
+Open **“MSYS2 MINGW64”** and run:
+
+```bash
+pacman -S --needed \
+  mingw-w64-x86_64-toolchain \
+  mingw-w64-x86_64-cmake \
+  mingw-w64-x86_64-ninja \
+  mingw-w64-x86_64-qt5 \
+  mingw-w64-x86_64-qt5-tools \
+  mingw-w64-x86_64-angleproject \
+  mingw-w64-x86_64-freeglut
+```
+
+### 3. Configure and build
+
+From the repository root (under MSYS2, e.g. `cd /c/path/to/OnexExplorer`):
+
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build
+```
+
+Output: `build/OnexExplorer.exe`.
+
+The Windows CMake target is linked as a **console** application so `--help` and `--cli` output appear in the terminal; starting the GUI with **no arguments** (e.g. double‑click) does not keep a stray console window open.
+
+### 4. Optional: portable folder (Qt + freeglut DLLs)
+
+To run outside MSYS without relying on the full MinGW `PATH`, copy the executable and run `windeployqt`, then add freeglut (same pattern as [`.github/workflows/publish.yml`](.github/workflows/publish.yml)):
+
+```bash
+mkdir -p release
+cp build/OnexExplorer.exe release/
+cd release
+windeployqt-qt5.exe --release --compiler-runtime OnexExplorer.exe
+cd ..
+cp $MINGW_PREFIX/bin/libfreeglut*.dll release/
+```
+
+Adjust `windeployqt-qt5.exe` vs `windeployqt.exe` depending on what your Qt package installs in `/mingw64/bin`.
+
+### 5. If the default GCC (`cc`) fails to compile
+
+On some machines the MinGW GCC toolchain is broken (CMake’s compiler test or `windres` preprocessing fails). Install Clang and LLVM, then configure with **`llvm-windres`** so `.rc` files still build:
+
+```bash
+pacman -S --needed mingw-w64-x86_64-clang mingw-w64-x86_64-llvm
+
+rm -rf build
+CC=clang CXX=clang++ cmake -S . -B build -G Ninja -DCMAKE_RC_COMPILER=llvm-windres
+cmake --build build
+```
+
+### Running CMake from cmd.exe / PowerShell
+
+You can invoke the same environment without opening the MINGW64 window manually, for example:
+
+```text
+C:\msys64\msys2_shell.cmd -mingw64 -defterm -no-start -where C:\path\to\OnexExplorer -lc "cmake -S . -B build -G Ninja && cmake --build build"
+```
+
+(Replace `C:\msys64` and the repo path as needed.)
 
 ## Windows (from Linux via cross-compile)
 
