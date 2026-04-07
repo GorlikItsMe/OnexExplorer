@@ -63,6 +63,7 @@ jobs:
             mingw-w64-x86_64-ninja
             mingw-w64-x86_64-qt5
             mingw-w64-x86_64-qt5-tools
+            mingw-w64-x86_64-angleproject
             mingw-w64-x86_64-freeglut
 
       - name: Configure

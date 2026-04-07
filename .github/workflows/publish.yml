@@ -69,6 +69,7 @@ jobs:
             mingw-w64-${{ matrix.mingw_arch }}-ninja
             mingw-w64-${{ matrix.mingw_arch }}-qt5
             mingw-w64-${{ matrix.mingw_arch }}-qt5-tools
+            mingw-w64-${{ matrix.mingw_arch }}-angleproject
             mingw-w64-${{ matrix.mingw_arch }}-freeglut
 
       - name: Configure
