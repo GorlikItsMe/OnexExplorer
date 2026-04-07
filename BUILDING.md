@@ -95,18 +95,25 @@ The Windows CMake target is linked as a **console** application so `--help` and 
 
 ### 4. Optional: portable folder (Qt + freeglut DLLs)
 
-To run outside MSYS without relying on the full MinGW `PATH`, copy the executable and run `windeployqt`, then add freeglut (same pattern as [`.github/workflows/publish.yml`](.github/workflows/publish.yml)):
+To run outside MSYS without relying on the full MinGW `PATH`, copy the executable and run `windeployqt`, then add freeglut. This is the same sequence as in [`.github/workflows/test.yml`](.github/workflows/test.yml) (E2E folder) and [`.github/workflows/publish.yml`](.github/workflows/publish.yml) (release zip); only the output directory name differs below (`release` vs `e2e_exe` / `release` in CI).
+
+Run this block in **MSYS2 MINGW64** (Bash). It is **not** for cmd.exe or PowerShell—those shells do not understand `shopt`, `$MINGW_PREFIX`, or the `if`/`for` syntax below.
 
 ```bash
 mkdir -p release
 cp build/OnexExplorer.exe release/
 cd release
-windeployqt-qt5.exe --release --compiler-runtime OnexExplorer.exe
+if [ -x "$MINGW_PREFIX/bin/windeployqt.exe" ]; then
+  "$MINGW_PREFIX/bin/windeployqt.exe" --release --compiler-runtime OnexExplorer.exe
+else
+  "$MINGW_PREFIX/bin/windeployqt-qt5.exe" --release --compiler-runtime OnexExplorer.exe
+fi
 cd ..
-cp $MINGW_PREFIX/bin/libfreeglut*.dll release/
+shopt -s nullglob
+for dll in "$MINGW_PREFIX"/bin/libfreeglut*.dll; do
+  cp "$dll" release/
+done
 ```
-
-Adjust `windeployqt-qt5.exe` vs `windeployqt.exe` depending on what your Qt package installs in `/mingw64/bin`.
 
 ### 5. If the default GCC (`cc`) fails to compile
 
