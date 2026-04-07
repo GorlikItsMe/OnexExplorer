@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=OnexExplorer
+Comment=NosTale game asset explorer
+Exec=OnexExplorer %F
+Icon=onexexplorer
+Terminal=false
+Categories=Utility;FileTools;

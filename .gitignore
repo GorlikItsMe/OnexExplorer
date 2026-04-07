@@ -24,7 +24,8 @@ moc_predefs.h
 qrc_*.cpp
 ui_*.h
 Makefile*
-*build-*
+# Ignore build-* directories anywhere (do not use *build-* — it matches files like build-appimage.sh)
+**/build-*/
 
 # QtCreator
 

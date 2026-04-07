@@ -115,6 +115,8 @@ set(RESOURCES
 #add_executable( PROJECT_NAME ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} )
 if (WIN32)
     add_executable(OnexExplorer WIN32 ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
+    enable_language(RC)
+    target_sources(OnexExplorer PRIVATE resources/onexexplorer.rc)
 else()
     add_executable(OnexExplorer ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
 endif()
