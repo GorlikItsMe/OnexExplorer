@@ -14,9 +14,6 @@ enum ExitCode : int {
     CannotWriteTarget = 5,
 };
 
-// Returns true if argv contains --cli (used before QApplication init).
-bool argvContainsCli(int argc, char *argv[]);
-
 // Runs CLI/help parsing. Pass the argv snapshot taken *before* QApplication(argc, argv) — Qt may strip flags
 // like --help from argv, which would otherwise fall through to the GUI.
 int run(QApplication &app, const QStringList &arguments);

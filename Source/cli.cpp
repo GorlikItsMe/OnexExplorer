@@ -17,14 +17,6 @@
 #include <cstdio>
 
 namespace {
-static bool argvContains(int argc, char *argv[], const char *needle) {
-    for (int i = 1; i < argc; ++i) {
-        if (qstrcmp(argv[i], needle) == 0)
-            return true;
-    }
-    return false;
-}
-
 static INosFileOpener *selectOpener(const QByteArray &header, NosTextOpener &textOpener, NosZlibOpener &zlibOpener,
                                     NosCCInfOpener &ccinfOpener) {
     switch (selectNosOpenerKind(header)) {
@@ -84,10 +76,6 @@ static int runCliUnpack(const QString &unpackFile, const QString &targetDir) {
 } // namespace
 
 namespace Cli {
-bool argvContainsCli(int argc, char *argv[]) {
-    return argvContains(argc, argv, "--cli");
-}
-
 int run(QApplication &app, const QStringList &arguments) {
     QCommandLineParser parser;
     parser.setApplicationDescription("OnexExplorer (GUI + CLI). Use --cli to run headless commands.");
