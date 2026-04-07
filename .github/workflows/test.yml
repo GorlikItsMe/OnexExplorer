@@ -95,8 +95,6 @@ jobs:
       - name: Windows CLI diagnostics (raw exe, no Python)
         shell: pwsh
         continue-on-error: true
-        env:
-          QT_QPA_PLATFORM: offscreen
         run: |
           $root = $env:GITHUB_WORKSPACE
           $exe = Join-Path $root "e2e_exe\OnexExplorer.exe"
@@ -126,7 +124,6 @@ jobs:
         shell: pwsh
         env:
           ONEX_BIN: ${{ github.workspace }}/e2e_exe/OnexExplorer.exe
-          QT_QPA_PLATFORM: offscreen
           PYTHONUNBUFFERED: "1"
         run: |
           $mingwBin = Join-Path "${{ steps.msys2.outputs['msys2-location'] }}" "mingw64\bin"

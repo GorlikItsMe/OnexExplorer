@@ -8,19 +8,17 @@ input file exits with ``Cli::CannotOpenInput`` (3). On Unix, ``--help`` is used.
 
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 
 import pytest
 
-from tests.conftest import ONEX_BIN, REPO_ROOT
+from tests.conftest import ONEX_BIN, REPO_ROOT, onex_subprocess_env
 
 
 @pytest.mark.timeout(60)
 def test_cli_smoke_quick():
-    env = os.environ.copy()
-    env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    env = onex_subprocess_env()
 
     if sys.platform == "win32":
         target = REPO_ROOT / ".cache" / "cli_smoke_target"

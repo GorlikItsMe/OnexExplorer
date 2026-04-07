@@ -21,11 +21,19 @@ BUILD_DIR = Path(os.environ.get("ONEX_BUILD_DIR", REPO_ROOT / "build"))
 
 
 def _default_onex_bin() -> Path:
-    """CMake emits OnexExplorer.exe on Windows and OnexExplorer on Unix-like systems."""
+    """Resolve the CLI/GUI binary to run under tests.
+
+    On Windows, ``build/OnexExplorer.exe`` is not runnable by itself (Qt plugins + DLLs);
+    the portable layout from BUILDING.md (``release/``) or CI (``e2e_exe/``) must be used.
+    Those are preferred before ``build/``.
+    On Unix, CMake emits ``OnexExplorer`` in ``BUILD_DIR`` (with optional ``.exe``).
+    """
     no_ext = BUILD_DIR / "OnexExplorer"
     exe = BUILD_DIR / "OnexExplorer.exe"
     if sys.platform == "win32":
-        for candidate in (exe, no_ext):
+        portable = REPO_ROOT / "release" / "OnexExplorer.exe"
+        e2e = REPO_ROOT / "e2e_exe" / "OnexExplorer.exe"
+        for candidate in (portable, e2e, exe, no_ext):
             if candidate.is_file():
                 return candidate
         return exe
@@ -46,6 +54,42 @@ ONEX_BIN = _resolved_onex_bin()
 
 # Default for OnexExplorer CLI subprocess (--cli --unpack, etc.)
 _ONEX_SUBPROCESS_TIMEOUT_SEC = 30.0
+
+
+def onex_subprocess_env() -> dict:
+    """Environment for spawning OnexExplorer in tests.
+
+    Linux CI has no DISPLAY unless using the offscreen platform plugin.
+    Windows portable folders from ``windeployqt`` usually include ``qwindows.dll`` only;
+    forcing ``QT_QPA_PLATFORM=offscreen`` then fails with a missing platform plugin
+    unless ``qoffscreen.dll`` is also deployed (see ``Source/main.cpp``).
+    """
+    env = os.environ.copy()
+    if sys.platform == "win32":
+        env.pop("QT_QPA_PLATFORM", None)
+    else:
+        env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    return env
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    if sys.platform != "win32" or os.environ.get("ONEX_BIN"):
+        return
+    build_exe = (BUILD_DIR / "OnexExplorer.exe").resolve()
+    try:
+        chosen = ONEX_BIN.resolve()
+    except OSError:
+        return
+    if chosen == build_exe and chosen.is_file():
+        pytest.exit(
+            "On Windows, pytest needs a windeployqt'd OnexExplorer (Qt + freeglut DLLs next to the exe). "
+            "The file in build/ alone does not run from PowerShell/cmd. "
+            "Create release/ as in BUILDING.md section 4 (portable folder), or set ONEX_BIN to that exe "
+            "(CI uses e2e_exe/OnexExplorer.exe).",
+            returncode=1,
+        )
+
+
 
 
 def _stdio_for_onex() -> Tuple[Optional[int], Optional[int]]:
@@ -91,8 +135,7 @@ def _run_cmd(
 
 def _cli_unpack(game_file_path: Path, target_dir: Path) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
-    env = os.environ.copy()
-    env.setdefault("QT_QPA_PLATFORM", "offscreen")
+    env = onex_subprocess_env()
     rc, out = _run_cmd(
         [str(ONEX_BIN), "--cli", "--unpack", str(game_file_path), "--target", str(target_dir)],
         env=env,

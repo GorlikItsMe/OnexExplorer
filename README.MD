@@ -105,11 +105,10 @@ export QT_QPA_PLATFORM=offscreen   # headless Qt; optional on desktop with a dis
 python3 -m pytest tests/ -v
 ```
 
-On **Windows**, if pytest does not find the binary, point to it explicitly (path as built by your toolchain):
+On **Windows**, use a **portable** folder after `windeployqt` (see [BUILDING.md](BUILDING.md)); do **not** set `QT_QPA_PLATFORM=offscreen` unless you also deploy `platforms\qoffscreen.dll`. Tests clear that variable on Windows so Qt uses the usual `qwindows` plugin from `release/` or `e2e_exe/`.
 
 ```powershell
-$env:QT_QPA_PLATFORM="offscreen"
-$env:ONEX_BIN="build\OnexExplorer.exe"
+$env:ONEX_BIN="release\OnexExplorer.exe"   # or omit if release\ exists (default search order)
 python -m pytest tests/ -v
 ```
 
