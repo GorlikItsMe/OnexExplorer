@@ -7,11 +7,14 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QStringList>
+
+#include <cstdio>
 
 namespace {
 static bool argvContains(int argc, char *argv[], const char *needle) {
@@ -85,11 +88,15 @@ bool argvContainsCli(int argc, char *argv[]) {
     return argvContains(argc, argv, "--cli");
 }
 
-int run(QApplication &app) {
+int run(QApplication &app, const QStringList &arguments) {
     QCommandLineParser parser;
     parser.setApplicationDescription("OnexExplorer (GUI + CLI). Use --cli to run headless commands.");
-    parser.addHelpOption();
-    parser.addVersionOption();
+    // Do not use addHelpOption()/addVersionOption(): with QApplication on Windows they show QMessageBox
+    // instead of printing to the terminal.
+    QCommandLineOption helpOpt(QStringList() << "h" << "help", "Displays help on the command line.");
+    QCommandLineOption versionOpt(QStringList() << "v" << "version", "Displays version information.");
+    parser.addOption(helpOpt);
+    parser.addOption(versionOpt);
 
     QCommandLineOption cliOpt(QStringList() << "cli", "Run in CLI mode (no GUI).");
     QCommandLineOption unpackOpt(QStringList() << "unpack", "Unpack a .NOS file.", "filepath");
@@ -98,13 +105,32 @@ int run(QApplication &app) {
     parser.addOption(cliOpt);
     parser.addOption(unpackOpt);
     parser.addOption(targetOpt);
-    parser.process(app);
+
+    if (!parser.parse(arguments)) {
+        fprintf(stderr, "%s\n\n%s\n", qPrintable(parser.errorText()), qPrintable(parser.helpText()));
+        fflush(stderr);
+        return BadArgs;
+    }
+    if (parser.isSet(helpOpt)) {
+        fprintf(stderr, "%s\n", qPrintable(parser.helpText()));
+        fflush(stderr);
+        return 0;
+    }
+    if (parser.isSet(versionOpt)) {
+        fprintf(stderr, "%s %s\n", qPrintable(QCoreApplication::applicationName()),
+                qPrintable(QCoreApplication::applicationVersion()));
+        fflush(stderr);
+        return 0;
+    }
 
     if (!parser.isSet(cliOpt))
         return -1; // not CLI mode
 
     if (!parser.isSet(unpackOpt) || !parser.isSet(targetOpt)) {
-        parser.showHelp(BadArgs);
+        fprintf(stderr, "%s\n\n%s\n", qPrintable(QStringLiteral("With --cli, both --unpack and --target are required.")),
+                qPrintable(parser.helpText()));
+        fflush(stderr);
+        return BadArgs;
     }
 
     return runCliUnpack(parser.value(unpackOpt), parser.value(targetOpt));

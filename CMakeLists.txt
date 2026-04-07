@@ -114,7 +114,9 @@ set(RESOURCES
 # compile
 #add_executable( PROJECT_NAME ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} )
 if (WIN32)
-    add_executable(OnexExplorer WIN32 ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
+    # CONSOLE subsystem (no WIN32 flag) so --help / --cli output is visible in cmd/PowerShell.
+    # main.cpp calls FreeConsole() when starting GUI with no CLI arguments (typical double-click).
+    add_executable(OnexExplorer ${SOURCES} ${MOC_SRCS} ${RES_SOURCES} ${UI_HEADERS} ${RESOURCES})
     enable_language(RC)
     target_sources(OnexExplorer PRIVATE resources/onexexplorer.rc)
 else()

@@ -70,6 +70,13 @@ aqtinstall.log
 /build-*/
 /build-mingw/
 /dist/
+/release/
+
+# Local scratch / private helpers (keep out of version control)
+/B/
+/_ci_build.sh
+/_release_bundle.sh
+/t.c
 
 # Local downloaded SDKs/toolchains (large)
 /third_party/
