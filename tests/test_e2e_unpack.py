@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 import pytest
-from PIL import Image
 
 from tests.conftest import UnpackGameArchive
 
@@ -18,6 +17,8 @@ def sha256_rgba_png(path: Path) -> str:
     Why not just hash file?
     Because diffrent platforms (Linux, Windows) use diffrent encodings and the same image may have diffrent hashes.
     """
+    from PIL import Image
+
     img = Image.open(path).convert("RGBA")
     w, h = img.size
     payload = w.to_bytes(4, "little") + h.to_bytes(4, "little") + img.tobytes()

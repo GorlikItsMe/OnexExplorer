@@ -93,7 +93,7 @@ These tests build the app, download selected `.NOS` files, then run **CLI unpack
 
 ```bash
 python3 -m pip install --upgrade pip
-python3 -m pip install requests pillow pytest
+python3 -m pip install requests pillow pytest pytest-timeout
 ```
 
 ### Run tests

@@ -29,7 +29,7 @@ jobs:
       - name: Install test dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install requests pillow pytest
+          python3 -m pip install requests pillow pytest pytest-timeout
 
       - name: Run E2E tests (CLI)
         env:
@@ -96,7 +96,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          python -m pip install requests pillow pytest
+          python -m pip install requests pillow pytest pytest-timeout
 
       - name: Run E2E tests (CLI)
         shell: pwsh
