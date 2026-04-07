@@ -35,7 +35,14 @@ def _default_onex_bin() -> Path:
     return no_ext
 
 
-ONEX_BIN = Path(os.environ["ONEX_BIN"]) if os.environ.get("ONEX_BIN") else _default_onex_bin()
+def _resolved_onex_bin() -> Path:
+    p = Path(os.environ["ONEX_BIN"]) if os.environ.get("ONEX_BIN") else _default_onex_bin()
+    if not p.is_absolute():
+        p = (REPO_ROOT / p).resolve()
+    return p
+
+
+ONEX_BIN = _resolved_onex_bin()
 
 
 def _run_cmd(cmd: List[str], *, cwd=REPO_ROOT, env=None) -> tuple:

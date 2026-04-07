@@ -53,6 +53,7 @@ jobs:
           python-version: "3.11"
 
       - name: Setup MSYS2
+        id: msys2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -98,8 +99,10 @@ jobs:
       - name: Run E2E tests (CLI)
         shell: pwsh
         env:
-          ONEX_BIN: e2e_exe/OnexExplorer.exe
+          ONEX_BIN: ${{ github.workspace }}/e2e_exe/OnexExplorer.exe
           QT_QPA_PLATFORM: offscreen
         run: |
+          $mingwBin = Join-Path "${{ steps.msys2.outputs['msys2-location'] }}" "mingw64\bin"
+          $env:PATH = "$mingwBin;$env:PATH"
           python -m pytest -q
 
