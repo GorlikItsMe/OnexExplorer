@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Optional, Tuple
 
 import pytest
 import requests
@@ -45,16 +45,31 @@ def _resolved_onex_bin() -> Path:
 ONEX_BIN = _resolved_onex_bin()
 
 
-def _run_cmd(cmd: List[str], *, cwd=REPO_ROOT, env=None) -> tuple:
-    p = subprocess.run(
-        cmd,
-        cwd=cwd,
-        env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-    return p.returncode, p.stdout
+def _run_cmd(
+    cmd: List[str],
+    *,
+    cwd=REPO_ROOT,
+    env=None,
+    timeout=60.0,
+) -> Tuple[int, str]:
+    try:
+        p = subprocess.run(
+            cmd,
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as e:
+        partial = e.stdout or ""
+        msg = (
+            f"\n[OnexExplorer subprocess still running after {timeout}s — likely hang or pathological "
+            f"slow unpack; child was terminated by pytest harness]\n{partial}"
+        )
+        assert False, msg
+    return p.returncode, p.stdout or ""
 
 
 def _cli_unpack(game_file_path: Path, target_dir: Path) -> None:
